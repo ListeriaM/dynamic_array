@@ -1,4 +1,4 @@
-/* dynamic_array - v2.0 - public domain dynamic array implementation
+/* dynamic_array - v2.1 - public domain dynamic array implementation
 
    DOCUMENTATION
      (usage: see provided examples)
@@ -185,16 +185,22 @@ typedef size_t da_size;
     da_size DA_CAPACITY_FIELD;                                                \
 }
 
-#define DA_INIT {0}
+#define DA_INIT da_from_parts(0, 0, 0)
 
 #define da_with_capacity(T, ctx, capacity)                                    \
-    da_from_parts(DA_MALLOC((ctx), (capacity) * sizeof(T)), 0, capacity)
+    da_from_parts((T*)DA_MALLOC((ctx), (capacity) * sizeof(T)), 0, capacity)
 
 #define da_from_parts(items, count, capacity) { (items), (count), (capacity) }
 
+#if defined(__cplusplus)
+#define DA_CAST(T) (decltype(T))
+#else
+#define DA_CAST(T)
+#endif
+
 #define da_append(ctx, da, item)                                              \
     (((da)->DA_COUNT_FIELD == (da)->DA_CAPACITY_FIELD ?                       \
-     (da)->DA_ITEMS_FIELD = DA_REALLOC(                                       \
+     (da)->DA_ITEMS_FIELD = DA_CAST((da)->DA_ITEMS_FIELD)DA_REALLOC(          \
          (ctx),                                                               \
          (da)->DA_ITEMS_FIELD,                                                \
          sizeof(*(da)->DA_ITEMS_FIELD) * (da)->DA_CAPACITY_FIELD,             \
