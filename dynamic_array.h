@@ -1,4 +1,4 @@
-/* dynamic_array - v1.0 - public domain dynamic array implementation
+/* dynamic_array - v2.0 - public domain dynamic array implementation
 
    DOCUMENTATION
      (usage: see provided examples)
@@ -12,18 +12,19 @@
      da_with_capacity(T, ctx, capacity) - uses DA_MALLOC
        return a dynamic array with the given initial capacity
 
-     da_append(T, ctx, da, item) - uses DA_REALLOC
+     da_append(ctx, da, item) - uses DA_REALLOC
        append an item to the dynamic array and
        return the value of the passed in item
 
-     da_pop(T, da)
+     da_pop(da)
        remove the last element in the dynamic array and return it as an rvalue
 
-     da_pop_checked(T, da)
+     da_pop_or(da, expr)
        remove the last element in the dynamic array and return it as an rvalue
-       or return the zero'th value for the type T if the array is empty
+       or evaluate the given expression and return it if the array is empty
+       (the provided expression must evaluate to a value of type T)
 
-     da_free(T, ctx, da) - uses DA_FREE
+     da_free(ctx, da) - uses DA_FREE
        free the memory allocated by the dynamic array
 
    LICENSE
@@ -47,9 +48,9 @@
 #include "dynamic_array.h"
 
 /* some convenience macros because we're using libc (malloc, realloc, free) */
-#define da_make(T, cap)      da_with_capacity(T,, cap)
-#define da_push(T, da, item) da_append(T,, da, item)
-#define da_delete(T, da)     da_free(T,, da)
+#define da_make(T, cap)   da_with_capacity(T,, cap)
+#define da_push(da, item) da_append(, da, item)
+#define da_delete(da)     da_free(, da)
 
 int main(int argc, char *argv[])
 {
@@ -57,7 +58,7 @@ int main(int argc, char *argv[])
     int sum = 0;
 
     for (int i = 1; i < argc; i++)
-        da_push(int, &da, atoi(argv[i]));
+        da_push(&da, atoi(argv[i]));
 
     /* running total */
     fputs("[", stdout);
@@ -65,12 +66,12 @@ int main(int argc, char *argv[])
         printf("%s%d", i == 0 ? "" : ", ", sum += da.items[i]);
     fputs("]\n", stdout);
 
-    /* safely pop at most 10 values, missing elements default to zero */
+    /* safely pop at most 10 values, missing elements default to -1 */
     for (size_t i = 0; i < 10; i++)
-        printf("%s%d", i == 0 ? "[" : ", ", da_pop_checked(int, &da));
+        printf("%s%d", i == 0 ? "[" : ", ", da_pop_or(&da, -1));
     fputs("]\n", stdout);
 
-    da_delete(int, &da);
+    da_delete(&da);
     return 0;
 }
 #endif
@@ -84,9 +85,9 @@ int main(int argc, char *argv[])
 #include "dynamic_array.h"
 
 /* some convenience macros because we're using libc (malloc, realloc, free) */
-#define da_make(T, cap)      da_with_capacity(T,, cap)
-#define da_push(T, da, item) da_append(T,, da, item)
-#define da_delete(T, da)     da_free(T,, da)
+#define da_make(T, cap)   da_with_capacity(T,, cap)
+#define da_push(da, item) da_append(, da, item)
+#define da_delete(da)     da_free(, da)
 
 /* straight from qsort(3) */
 static int
@@ -111,7 +112,7 @@ int main(int argc, char *argv[])
     ssize_t nread;
 
     while ((nread = getline(&line, &n, stdin)) > 0)
-        da_push(T, &da, strdup(line));
+        da_push(&da, strdup(line));
 
     qsort(da.items, da.count, sizeof(T), cmpstringp);
 
@@ -120,7 +121,7 @@ int main(int argc, char *argv[])
         free(da.items[i]);
     }
 
-    da_delete(T, &da);
+    da_delete(&da);
     free(line);
 
     return 0;
@@ -180,34 +181,36 @@ typedef size_t da_size;
 
 #define DA_INIT {0}
 
-#define da_with_capacity(T, ctx, cap) {                                       \
-    .DA_ITEMS_FIELD = DA_MALLOC((ctx), (cap) * sizeof(T)),                    \
-    .DA_COUNT_FIELD = 0,                                                      \
-    .DA_CAPACITY_FIELD = (cap),                                               \
-}
+#define da_with_capacity(T, ctx, capacity)                                    \
+    da_from_parts(DA_MALLOC((ctx), (capacity) * sizeof(T)), 0, capacity)
 
-#define da_append(T, ctx, da, item)                                           \
+#define da_from_parts(items, count, capacity) { (items), (count), (capacity) }
+
+#define da_append(ctx, da, item)                                              \
     (((da)->DA_COUNT_FIELD == (da)->DA_CAPACITY_FIELD ?                       \
      (da)->DA_ITEMS_FIELD = DA_REALLOC(                                       \
          (ctx),                                                               \
          (da)->DA_ITEMS_FIELD,                                                \
-         sizeof(T) * (da)->DA_CAPACITY_FIELD,                                 \
-         sizeof(T) * ((da)->DA_CAPACITY_FIELD > 0 ?                           \
-                      (da)->DA_CAPACITY_FIELD * 2 :                           \
-                      DA_INIT_CAPACITY)),                                     \
+         sizeof(*(da)->DA_ITEMS_FIELD) * (da)->DA_CAPACITY_FIELD,             \
+         sizeof(*(da)->DA_ITEMS_FIELD) * ((da)->DA_CAPACITY_FIELD > 0 ?       \
+                                          (da)->DA_CAPACITY_FIELD * 2 :       \
+                                          DA_INIT_CAPACITY)),                 \
      (da)->DA_CAPACITY_FIELD = ((da)->DA_CAPACITY_FIELD > 0 ?                 \
                                 (da)->DA_CAPACITY_FIELD * 2 :                 \
                                 DA_INIT_CAPACITY) : 0),                       \
      (da)->DA_ITEMS_FIELD[(da)->DA_COUNT_FIELD++] = item)
 
-#define da_pop(T, da)                                                         \
-    (1 ? (da)->DA_ITEMS_FIELD[--(da)->DA_COUNT_FIELD] : (T){0})
+/* convert an lvalue to an rvalue (for private use) */
+#define DA_RVALUE(V) (1 ? (V) : (V))
 
-#define da_pop_checked(T, da)                                                 \
-    ((da)->DA_COUNT_FIELD > 0 ? da_pop(T, da) : (T){0})
+#define da_pop(da) DA_RVALUE((da)->DA_ITEMS_FIELD[--(da)->DA_COUNT_FIELD])
 
-#define da_free(T, ctx, da)                                                   \
-    DA_FREE((ctx), (da)->DA_ITEMS_FIELD, (da)->DA_CAPACITY_FIELD * sizeof(T))
+#define da_pop_or(da, expr) ((da)->DA_COUNT_FIELD > 0 ? da_pop(da) : (expr))
+
+#define da_free(ctx, da)                                                      \
+    DA_FREE((ctx),                                                            \
+            (da)->DA_ITEMS_FIELD,                                             \
+            (da)->DA_CAPACITY_FIELD * sizeof(*(da)->DA_ITEMS_FIELD))
 
 #endif // DYNAMIC_ARRAY_H
 

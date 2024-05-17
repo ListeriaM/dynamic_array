@@ -18,8 +18,8 @@ copy-paste [./dynamic_array.h](./dynamic_array.h) to your project and
 
 /* some convenience macros because we're using libc (malloc, realloc, free) */
 #define da_make(T, cap)      da_with_capacity(T,, cap)
-#define da_push(T, da, item) da_append(T,, da, item)
-#define da_delete(T, da)     da_free(T,, da)
+#define da_push(da, item) da_append(, da, item)
+#define da_delete(da)     da_free(, da)
 
 int main(int argc, char *argv[])
 {
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     int sum = 0;
 
     for (int i = 1; i < argc; i++)
-        da_push(int, &da, atoi(argv[i]));
+        da_push(&da, atoi(argv[i]));
 
     /* running total */
     fputs("[", stdout);
@@ -35,12 +35,12 @@ int main(int argc, char *argv[])
         printf("%s%d", i == 0 ? "" : ", ", sum += da.items[i]);
     fputs("]\n", stdout);
 
-    /* safely pop at most 10 values, missing elements default to zero */
+    /* safely pop at most 10 values, missing elements default to -1 */
     for (size_t i = 0; i < 10; i++)
-        printf("%s%d", i == 0 ? "[" : ", ", da_pop_checked(int, &da));
+        printf("%s%d", i == 0 ? "[" : ", ", da_pop_or(&da, -1));
     fputs("]\n", stdout);
 
-    da_delete(int, &da);
+    da_delete(&da);
     return 0;
 }
 ```
