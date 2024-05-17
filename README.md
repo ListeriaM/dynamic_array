@@ -17,7 +17,7 @@ copy-paste [./dynamic_array.h](./dynamic_array.h) to your project and
 #include "dynamic_array.h"
 
 /* some convenience macros because we're using libc (malloc, realloc, free) */
-#define da_make(T, cap)      da_with_capacity(T,, cap)
+#define da_make(T, cap)   da_with_capacity(T,, cap)
 #define da_push(da, item) da_append(, da, item)
 #define da_delete(da)     da_free(, da)
 
