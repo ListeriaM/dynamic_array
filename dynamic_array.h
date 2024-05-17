@@ -9,6 +9,12 @@
      DA_INIT
        zero value for the dynamic array
 
+     da_from_parts(items, count, capacity)
+       return a dynamic array with the given initial values.
+       freeing the dynamic array will free (DA_FREE) with the provided buffer.
+       appending to the dynamic array beyond the provided capacity will
+       reallocate (DA_REALLOC) the provided `items' buffer.
+
      da_with_capacity(T, ctx, capacity) - uses DA_MALLOC
        return a dynamic array with the given initial capacity
 
