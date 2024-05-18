@@ -1,4 +1,4 @@
-/* dynamic_array - v2.2 - public domain dynamic array implementation
+/* dynamic_array - v2.3 - public domain dynamic array implementation
 
    DOCUMENTATION
      (usage: see provided examples)
@@ -33,6 +33,9 @@
        remove the last element in the dynamic array and return it as an rvalue
        or evaluate the given expression and return it if the array is empty
        (the provided expression must evaluate to a value of type T)
+
+     da_memdup(ctx, da) - uses DA_MALLOC
+       allocate a copy of the data contained in the dynamic array
 
      da_free(ctx, da) - uses DA_FREE
        free the memory allocated by the dynamic array
@@ -242,6 +245,11 @@ typedef size_t da_size;
 #define da_pop(da) DA_RVALUE((da)->DA_ITEMS_FIELD[--(da)->DA_COUNT_FIELD])
 
 #define da_pop_or(da, expr) ((da)->DA_COUNT_FIELD > 0 ? da_pop(da) : (expr))
+
+#define da_memdup(ctx, da)                                                    \
+    DA_CAST((da)->DA_ITEMS_FIELD)memcpy(                                      \
+        DA_MALLOC((ctx), sizeof(*(da)->DA_ITEMS_FIELD)*(da)->DA_COUNT_FIELD), \
+        (da)->DA_ITEMS_FIELD, (da)->DA_COUNT_FIELD)
 
 #define da_free(ctx, da)                                                      \
     DA_FREE((ctx),                                                            \
