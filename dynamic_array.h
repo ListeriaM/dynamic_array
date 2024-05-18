@@ -1,4 +1,4 @@
-/* dynamic_array - v2.3 - public domain dynamic array implementation
+/* dynamic_array - v2.4 - public domain dynamic array implementation
 
    DOCUMENTATION
      (usage: see provided examples)
@@ -39,6 +39,18 @@
 
      da_free(ctx, da) - uses DA_FREE
        free the memory allocated by the dynamic array
+
+     StringBuilder (DynamicArray specialization for `char': DynamicArray(char))
+       may be disabled by defining DA_NO_STRING_BUILDER.
+       there is a corresponding sb_* macro for every da_* macro plus the
+       following definitions:
+
+     sb_with_capacity(ctx, cap)   -> da_with_capacity(char, ctx, cap)
+     sb_append_cstr(ctx, sb, str) -> da_append_many(ctx, sb, str, strlen(str))
+     sb_append_null(ctx, sb)      -> da_append(ctx, sb, '\0')
+
+     sb_strdup(ctx, sb) - uses DA_MALLOC
+       allocates a null-terminated copy of the built string and returns it
 
    LICENSE
 
@@ -256,6 +268,35 @@ typedef size_t da_size;
             (da)->DA_ITEMS_FIELD,                                             \
             (da)->DA_CAPACITY_FIELD * sizeof(*(da)->DA_ITEMS_FIELD))
 
+#ifndef DA_NO_STRING_BUILDER
+
+#ifdef DA_STRING_BUILDER_T
+typedef DynamicArray(char) DA_STRING_BUILDER_T;
+#else
+typedef DynamicArray(char) StringBuilder;
+#endif
+
+#define SB_INIT        DA_INIT
+#define sb_from_parts  da_from_parts
+#define sb_append      da_append
+#define sb_append_many da_append_many
+#define sb_pop         da_pop
+#define sb_pop_or      da_pop_or
+#define sb_memdup      da_memdup
+#define sb_free        da_free
+
+#define sb_with_capacity(ctx, cap)   da_with_capacity(char, ctx, cap)
+#define sb_append_cstr(ctx, sb, str) da_append_many(ctx, sb, str, strlen(str))
+#define sb_append_null(ctx, sb)      da_append(ctx, sb, '\0')
+
+#define sb_strdup(ctx, sb)                                                    \
+    ((char*)memset((char*)memcpy(DA_MALLOC((ctx), (sb)->DA_COUNT_FIELD + 1),  \
+                                 (sb)->DA_ITEMS_FIELD,                        \
+                                 (sb)->DA_COUNT_FIELD)                        \
+                    + (sb)->DA_COUNT_FIELD, '\0', 1)                          \
+     - (sb)->DA_COUNT_FIELD)
+
+#endif // DA_NO_STRING_BUILDER
 #endif // DYNAMIC_ARRAY_H
 
 /*
