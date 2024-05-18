@@ -1,4 +1,4 @@
-/* dynamic_array - v2.1 - public domain dynamic array implementation
+/* dynamic_array - v2.2 - public domain dynamic array implementation
 
    DOCUMENTATION
      (usage: see provided examples)
@@ -21,6 +21,10 @@
      da_append(ctx, da, item) - uses DA_REALLOC
        append an item to the dynamic array and
        return the value of the passed in item
+
+     da_append_many(ctx, da, items, count) - uses DA_REALLOC
+       append `count' items from the provided buffer to the dynamic array
+       unlike the other macros, this is a statement, not an expression
 
      da_pop(da)
        remove the last element in the dynamic array and return it as an rvalue
@@ -211,6 +215,26 @@ typedef size_t da_size;
                                 (da)->DA_CAPACITY_FIELD * 2 :                 \
                                 DA_INIT_CAPACITY) : 0),                       \
      (da)->DA_ITEMS_FIELD[(da)->DA_COUNT_FIELD++] = item)
+
+#define da_append_many(ctx, da, items, count)                                 \
+    do {                                                                      \
+        if ((da)->DA_COUNT_FIELD + (count) > (da)->DA_CAPACITY_FIELD) {       \
+            da_size da_size__v = ((da)->DA_CAPACITY_FIELD > 0 ?               \
+                                  (da)->DA_CAPACITY_FIELD * 2 :               \
+                                  DA_INIT_CAPACITY);                          \
+            while (da_size__v < (da)->DA_COUNT_FIELD + (count))               \
+                da_size__v *= 2;                                              \
+            (da)->DA_ITEMS_FIELD = DA_CAST((da)->DA_ITEMS_FIELD)DA_REALLOC(   \
+                (ctx),                                                        \
+                (da)->DA_ITEMS_FIELD,                                         \
+                sizeof(*(da)->DA_ITEMS_FIELD) * (da)->DA_CAPACITY_FIELD,      \
+                sizeof(*(da)->DA_ITEMS_FIELD) * da_size__v);                  \
+            (da)->DA_CAPACITY_FIELD = da_size__v;                             \
+        }                                                                     \
+        memcpy((da)->DA_ITEMS_FIELD + (da)->DA_COUNT_FIELD,                   \
+               items, (count) * sizeof(*(da)->DA_ITEMS_FIELD));               \
+        (da)->DA_COUNT_FIELD += (count);                                      \
+    } while (0)
 
 /* convert an lvalue to an rvalue (for private use) */
 #define DA_RVALUE(V) (1 ? (V) : (V))
