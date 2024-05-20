@@ -1,4 +1,4 @@
-/* dynamic_array - v2.4 - public domain dynamic array implementation
+/* dynamic_array - v2.5 - public domain dynamic array implementation
 
    DOCUMENTATION
      (usage: see provided examples)
@@ -46,8 +46,8 @@
        following definitions:
 
      sb_with_capacity(ctx, cap)   -> da_with_capacity(char, ctx, cap)
-     sb_append_cstr(ctx, sb, str) -> da_append_many(ctx, sb, str, strlen(str))
      sb_append_null(ctx, sb)      -> da_append(ctx, sb, '\0')
+     sb_append_cstr(ctx, sb, str) -> da_append_many(ctx, sb, str, strlen(str))
 
      sb_strdup(ctx, sb) - uses DA_MALLOC
        allocates a null-terminated copy of the built string and returns it
@@ -173,6 +173,17 @@ int main(int argc, char *argv[])
 # define DA_FREE(ctx, ptr, sz)                 free(ptr)
 #endif
 
+/* More standard library stuff */
+#ifndef DA_MEMSET
+# define DA_MEMSET(s, c, n) memset((s), (c), (n))
+#endif
+#ifndef DA_MEMCPY
+# define DA_MEMCPY(dst, src, n) memcpy((dst), (src), (n))
+#endif
+#ifndef DA_STRLEN
+# define DA_STRLEN(s) strlen((s))
+#endif
+
 #ifndef DA_INIT_CAPACITY
 # define DA_INIT_CAPACITY 16
 #endif
@@ -229,7 +240,7 @@ typedef size_t da_size;
      (da)->DA_CAPACITY_FIELD = ((da)->DA_CAPACITY_FIELD > 0 ?                 \
                                 (da)->DA_CAPACITY_FIELD * 2 :                 \
                                 DA_INIT_CAPACITY) : 0),                       \
-     (da)->DA_ITEMS_FIELD[(da)->DA_COUNT_FIELD++] = item)
+     (da)->DA_ITEMS_FIELD[(da)->DA_COUNT_FIELD++] = (item))
 
 #define da_append_many(ctx, da, items, count)                                 \
     do {                                                                      \
@@ -246,8 +257,8 @@ typedef size_t da_size;
                 sizeof(*(da)->DA_ITEMS_FIELD) * da_size__v);                  \
             (da)->DA_CAPACITY_FIELD = da_size__v;                             \
         }                                                                     \
-        memcpy((da)->DA_ITEMS_FIELD + (da)->DA_COUNT_FIELD,                   \
-               items, (count) * sizeof(*(da)->DA_ITEMS_FIELD));               \
+        DA_MEMCPY((da)->DA_ITEMS_FIELD + (da)->DA_COUNT_FIELD,                \
+                  (items), (count) * sizeof(*(da)->DA_ITEMS_FIELD));          \
         (da)->DA_COUNT_FIELD += (count);                                      \
     } while (0)
 
@@ -259,7 +270,7 @@ typedef size_t da_size;
 #define da_pop_or(da, expr) ((da)->DA_COUNT_FIELD > 0 ? da_pop(da) : (expr))
 
 #define da_memdup(ctx, da)                                                    \
-    DA_CAST((da)->DA_ITEMS_FIELD)memcpy(                                      \
+    DA_CAST((da)->DA_ITEMS_FIELD)DA_MEMCPY(                                   \
         DA_MALLOC((ctx), sizeof(*(da)->DA_ITEMS_FIELD)*(da)->DA_COUNT_FIELD), \
         (da)->DA_ITEMS_FIELD, (da)->DA_COUNT_FIELD)
 
@@ -286,14 +297,16 @@ typedef DynamicArray(char) StringBuilder;
 #define sb_free        da_free
 
 #define sb_with_capacity(ctx, cap)   da_with_capacity(char, ctx, cap)
-#define sb_append_cstr(ctx, sb, str) da_append_many(ctx, sb, str, strlen(str))
 #define sb_append_null(ctx, sb)      da_append(ctx, sb, '\0')
+#define sb_append_cstr(ctx, sb, str)                                          \
+    da_append_many(ctx, sb, str, DA_STRLEN(str))
 
 #define sb_strdup(ctx, sb)                                                    \
-    ((char*)memset((char*)memcpy(DA_MALLOC((ctx), (sb)->DA_COUNT_FIELD + 1),  \
-                                 (sb)->DA_ITEMS_FIELD,                        \
-                                 (sb)->DA_COUNT_FIELD)                        \
-                    + (sb)->DA_COUNT_FIELD, '\0', 1)                          \
+    ((char*)DA_MEMSET(                                                        \
+        (char*)DA_MEMCPY(DA_MALLOC((ctx), (sb)->DA_COUNT_FIELD + 1),          \
+                         (sb)->DA_ITEMS_FIELD,                                \
+                         (sb)->DA_COUNT_FIELD)                                \
+        + (sb)->DA_COUNT_FIELD, '\0', 1)                                      \
      - (sb)->DA_COUNT_FIELD)
 
 #endif // DA_NO_STRING_BUILDER
