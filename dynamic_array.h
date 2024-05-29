@@ -1,4 +1,4 @@
-/* dynamic_array - v2.5 - public domain dynamic array implementation
+/* dynamic_array - v3.0 - public domain dynamic array implementation
 
    DOCUMENTATION
      (usage: see provided examples)
@@ -257,9 +257,8 @@ typedef size_t da_size;
                 sizeof(*(da)->DA_ITEMS_FIELD) * da_size__v);                  \
             (da)->DA_CAPACITY_FIELD = da_size__v;                             \
         }                                                                     \
-        DA_MEMCPY((da)->DA_ITEMS_FIELD + (da)->DA_COUNT_FIELD,                \
-                  (items), (count) * sizeof(*(da)->DA_ITEMS_FIELD));          \
-        (da)->DA_COUNT_FIELD += (count);                                      \
+        for (da_size da__i = 0; da__i < (count); da__i++)                     \
+            (da)->DA_ITEMS_FIELD[(da)->DA_COUNT_FIELD++] = (items)[da__i];    \
     } while (0)
 
 /* convert an lvalue to an rvalue (for private use) */
