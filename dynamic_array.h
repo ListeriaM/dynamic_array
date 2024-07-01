@@ -262,9 +262,9 @@ typedef size_t da_size;
     } while (0)
 
 /* convert an lvalue to an rvalue (for private use) */
-#define DA_RVALUE(V) (1 ? (V) : (V))
+#define DA__RVALUE(V) (1 ? (V) : (V))
 
-#define da_pop(da) DA_RVALUE((da)->DA_ITEMS_FIELD[--(da)->DA_COUNT_FIELD])
+#define da_pop(da) DA__RVALUE((da)->DA_ITEMS_FIELD[--(da)->DA_COUNT_FIELD])
 
 #define da_pop_or(da, expr) ((da)->DA_COUNT_FIELD > 0 ? da_pop(da) : (expr))
 
