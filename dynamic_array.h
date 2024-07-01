@@ -223,14 +223,14 @@ typedef size_t da_size;
 #define da_from_parts(items, count, capacity) { (items), (count), (capacity) }
 
 #if defined(__cplusplus)
-#define DA_CAST(T) (decltype(T))
+# define DA__CAST(T) (decltype(T))
 #else
-#define DA_CAST(T)
+# define DA__CAST(T)
 #endif
 
 #define da_append(ctx, da, item)                                              \
     (((da)->DA_COUNT_FIELD == (da)->DA_CAPACITY_FIELD ?                       \
-     (da)->DA_ITEMS_FIELD = DA_CAST((da)->DA_ITEMS_FIELD)DA_REALLOC(          \
+     (da)->DA_ITEMS_FIELD = DA__CAST((da)->DA_ITEMS_FIELD)DA_REALLOC(         \
          (ctx),                                                               \
          (da)->DA_ITEMS_FIELD,                                                \
          sizeof(*(da)->DA_ITEMS_FIELD) * (da)->DA_CAPACITY_FIELD,             \
@@ -250,7 +250,7 @@ typedef size_t da_size;
                                   DA_INIT_CAPACITY);                          \
             while (da_size__v < (da)->DA_COUNT_FIELD + (count))               \
                 da_size__v *= 2;                                              \
-            (da)->DA_ITEMS_FIELD = DA_CAST((da)->DA_ITEMS_FIELD)DA_REALLOC(   \
+            (da)->DA_ITEMS_FIELD = DA__CAST((da)->DA_ITEMS_FIELD)DA_REALLOC(  \
                 (ctx),                                                        \
                 (da)->DA_ITEMS_FIELD,                                         \
                 sizeof(*(da)->DA_ITEMS_FIELD) * (da)->DA_CAPACITY_FIELD,      \
@@ -269,7 +269,7 @@ typedef size_t da_size;
 #define da_pop_or(da, expr) ((da)->DA_COUNT_FIELD > 0 ? da_pop(da) : (expr))
 
 #define da_memdup(ctx, da)                                                    \
-    DA_CAST((da)->DA_ITEMS_FIELD)DA_MEMCPY(                                   \
+    DA__CAST((da)->DA_ITEMS_FIELD)DA_MEMCPY(                                  \
         DA_MALLOC((ctx), sizeof(*(da)->DA_ITEMS_FIELD)*(da)->DA_COUNT_FIELD), \
         (da)->DA_ITEMS_FIELD, (da)->DA_COUNT_FIELD)
 
