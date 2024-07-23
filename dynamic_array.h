@@ -1,4 +1,4 @@
-/* dynamic_array - v3.0 - public domain dynamic array implementation
+/* dynamic_array - v3.1 - public domain dynamic array implementation
 
    DOCUMENTATION
      (usage: see provided examples)
@@ -65,6 +65,9 @@
 
 #ifndef DYNAMIC_ARRAY_H
 #define DYNAMIC_ARRAY_H
+
+#define DA_VERSION_MAJOR 3
+#define DA_VERSION_MINOR 1
 
 /** Example (running total) */
 #if 0
