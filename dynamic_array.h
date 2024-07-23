@@ -32,6 +32,7 @@
      da_pop_or(da, expr)
        remove the last element in the dynamic array and return it as an rvalue
        or evaluate the given expression and return it if the array is empty
+       does not evaluate `expr' if the array is not empty
        (the provided expression must evaluate to a value of type T)
 
      da_memdup(ctx, da) - uses DA_MALLOC
