@@ -271,7 +271,8 @@ typedef size_t da_size;
 #define da_memdup(ctx, da)                                                    \
     DA__CAST((da)->DA_ITEMS_FIELD)DA_MEMCPY(                                  \
         DA_MALLOC((ctx), sizeof(*(da)->DA_ITEMS_FIELD)*(da)->DA_COUNT_FIELD), \
-        (da)->DA_ITEMS_FIELD, (da)->DA_COUNT_FIELD)
+        (da)->DA_ITEMS_FIELD,                                                 \
+        sizeof(*(da)->DA_ITEMS_FIELD)*(da)->DA_COUNT_FIELD)
 
 #define da_free(ctx, da)                                                      \
     DA_FREE((ctx),                                                            \
