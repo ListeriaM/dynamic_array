@@ -245,11 +245,12 @@ typedef size_t da_size;
 
 #define da_append_many(ctx, da, items, count)                                 \
     do {                                                                      \
-        if ((da)->DA_COUNT_FIELD + (count) > (da)->DA_CAPACITY_FIELD) {       \
+        da_size da__count = (count);                                          \
+        if ((da)->DA_COUNT_FIELD + da__count > (da)->DA_CAPACITY_FIELD) {     \
             da_size da_size__v = ((da)->DA_CAPACITY_FIELD > 0 ?               \
                                   (da)->DA_CAPACITY_FIELD * 2 :               \
                                   DA_INIT_CAPACITY);                          \
-            while (da_size__v < (da)->DA_COUNT_FIELD + (count))               \
+            while (da_size__v < (da)->DA_COUNT_FIELD + da__count)             \
                 da_size__v *= 2;                                              \
             (da)->DA_ITEMS_FIELD = DA__CAST((da)->DA_ITEMS_FIELD)DA_REALLOC(  \
                 (ctx),                                                        \
@@ -258,7 +259,7 @@ typedef size_t da_size;
                 sizeof(*(da)->DA_ITEMS_FIELD) * da_size__v);                  \
             (da)->DA_CAPACITY_FIELD = da_size__v;                             \
         }                                                                     \
-        for (da_size da__i = 0; da__i < (count); da__i++)                     \
+        for (da_size da__i = 0; da__i < da__count; da__i++)                   \
             (da)->DA_ITEMS_FIELD[(da)->DA_COUNT_FIELD++] = (items)[da__i];    \
     } while (0)
 
