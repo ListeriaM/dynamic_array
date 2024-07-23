@@ -223,7 +223,7 @@ typedef size_t da_size;
 
 #define da_from_parts(items, count, capacity) { (items), (count), (capacity) }
 
-#if defined(__cplusplus)
+#if defined(__cplusplus) && defined(__cpp_decltype)
 # define DA__CAST(T) (decltype(T))
 #else
 # define DA__CAST(T)
@@ -263,7 +263,11 @@ typedef size_t da_size;
     } while (0)
 
 /* convert an lvalue to an rvalue (for private use) */
-#define DA__RVALUE(V) (1 ? (V) : (V))
+#if defined(__cplusplus) && defined(__cpp_auto_cast)
+# define DA__RVALUE(V) auto(V)
+#else
+# define DA__RVALUE(V) (1 ? (V) : /* not evaluated */ DA__CAST(V)(V))
+#endif
 
 #define da_pop(da) DA__RVALUE((da)->DA_ITEMS_FIELD[--(da)->DA_COUNT_FIELD])
 
